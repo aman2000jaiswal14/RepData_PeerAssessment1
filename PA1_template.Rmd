@@ -4,22 +4,48 @@ output:
   html_document:
     keep_md: true
 ---
-
-
+## Loading Libraries
+```{r echo=F}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
 ## Loading and preprocessing the data
 
+```{r}
+
+activity_df =  read.csv(unz('activity.zip','activity.csv'))
+activity_df$date = as.Date(activity_df$date)
+nonnull_activity_df = na.omit(activity_df)
+head(nonnull_activity_df)
+
+```
 
 
 ## What is mean total number of steps taken per day?
-
-
-
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+gpby_date = aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$date),FUN=mean)
+gpby_date
+```
 ## What is the average daily activity pattern?
-
-
-
+```{r}
+gpby_interval =  aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$interval),FUN=mean)
+plot(gpby_interval$Group.1,gpby_interval$x,type='l',xlab='interval',ylab='average')
+```
 ## Imputing missing values
-
-
-
+```{r}
+imputed_df = replace_na(activity_df,list(steps=0))
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+imputed_df$day = weekdays(imputed_df$date)
+imputed_df$weekend =as.factor(imputed_df$day=='Sunday' | imputed_df$day=='Saturday')
+levels(imputed_df$weekend)<-c('Weekday','Weekend')
+
+gpdata = imputed_df %>%
+    group_by(interval,weekend) %>% 
+    summarise(steps=mean(steps))
+ggplot <-ggplot(data=gpdata,aes(x = interval,y=steps))
+ggplot+geom_line()+facet_grid(rows =vars(weekend))
+```
