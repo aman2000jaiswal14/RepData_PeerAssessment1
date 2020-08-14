@@ -5,47 +5,85 @@ output:
     keep_md: true
 ---
 ## Loading Libraries
-```{r echo=F}
+```{r echo=T}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 ```
-## Loading and preprocessing the data
+## 1. Code for reading in the dataset and/or processing the data
 
 ```{r}
-
 activity_df =  read.csv(unz('activity.zip','activity.csv'))
 activity_df$date = as.Date(activity_df$date)
-nonnull_activity_df = na.omit(activity_df)
-head(nonnull_activity_df)
-
+bydate = na.omit(activity_df) %>% group_by(date)
+byinterval = na.omit(activity_df) %>% group_by(interval)
+```
+## 2. Histogram of the total number of steps taken each day
+```{r fig.height=4}
+temp = bydate %>% summarise(sumsteps=sum(steps))
+ggplot(temp,aes(sumsteps))+geom_histogram(bins=20)
+```
+## 3. Mean and median number of steps taken each day
+```{r}
+bydate %>% summarise(meansteps = mean(steps),mediansteps = median(steps))
+```
+## 4. Time series plot of the average number of steps taken
+```{r fig.height=4}
+temp = byinterval %>% summarise(meansteps=mean(steps))
+ggplot(temp,aes(interval,meansteps))+geom_line()
 ```
 
+## 5. The 5-minute interval that, on average, contains the maximum number of steps
 
-## What is mean total number of steps taken per day?
 ```{r}
-knitr::opts_chunk$set(echo = TRUE)
-gpby_date = aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$date),FUN=mean)
-gpby_date
+temp[which.max(temp$meansteps),]
+
 ```
-## What is the average daily activity pattern?
+## 6. Code to describe and show a strategy for imputing missing data
+
+**total number of missing values in the dataset**
 ```{r}
-gpby_interval =  aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$interval),FUN=mean)
-plot(gpby_interval$Group.1,gpby_interval$x,type='l',xlab='interval',ylab='average')
+apply(activity_df,2,function(x) sum(is.na(x)))
 ```
-## Imputing missing values
+
+**imputed value is calculated by floor of average on each interval.**
 ```{r}
-imputed_df = replace_na(activity_df,list(steps=0))
+imputed_df = activity_df
+imputed_val = byinterval %>% summarise(meanval = floor(mean(steps)))
+for (i in 1:dim(activity_df)[[1]]){
+  if(is.na(activity_df[i,'steps'])){
+    imputed_df[i,'steps']=subset(imputed_val,interval==activity_df[i,'interval'])$meanval
+  }
+}
 ```
-## Are there differences in activity patterns between weekdays and weekends?
+
+**median and mean of imputed df**
 ```{r}
+
+imputed_df %>% group_by(date) %>%summarise(meansteps = mean(steps)
+                                                     ,mediansteps = median(steps))
+```
+*The mean and median value by date is differ from the original data*
+
+## 7. Histogram of the total number of steps taken each day after missing values are imputed
+```{r fig.height=4}
+imputed_bydate = imputed_df%>% group_by(date)
+temp = imputed_bydate %>% summarise(sumsteps=sum(steps))
+ggplot(temp,aes(sumsteps))+geom_histogram(bins=20)
+```
+
+## 8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r}
+
 imputed_df$day = weekdays(imputed_df$date)
 imputed_df$weekend =as.factor(imputed_df$day=='Sunday' | imputed_df$day=='Saturday')
 levels(imputed_df$weekend)<-c('Weekday','Weekend')
-
 gpdata = imputed_df %>%
     group_by(interval,weekend) %>% 
     summarise(steps=mean(steps))
 ggplot <-ggplot(data=gpdata,aes(x = interval,y=steps))
 ggplot+geom_line()+facet_grid(rows =vars(weekend))
 ```
+
+## 9. All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+Here is the markdown file.

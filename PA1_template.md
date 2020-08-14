@@ -6,6 +6,10 @@ output:
 ---
 ## Loading Libraries
 
+```r
+library(dplyr)
+```
+
 ```
 ## 
 ## Attaching package: 'dplyr'
@@ -22,111 +26,174 @@ output:
 ## 
 ##     intersect, setdiff, setequal, union
 ```
-## Loading and preprocessing the data
+
+```r
+library(tidyr)
+library(ggplot2)
+```
+## 1. Code for reading in the dataset and/or processing the data
 
 
 ```r
 activity_df =  read.csv(unz('activity.zip','activity.csv'))
 activity_df$date = as.Date(activity_df$date)
-nonnull_activity_df = na.omit(activity_df)
-head(nonnull_activity_df)
+bydate = na.omit(activity_df) %>% group_by(date)
+byinterval = na.omit(activity_df) %>% group_by(interval)
 ```
-
-```
-##     steps       date interval
-## 289     0 2012-10-02        0
-## 290     0 2012-10-02        5
-## 291     0 2012-10-02       10
-## 292     0 2012-10-02       15
-## 293     0 2012-10-02       20
-## 294     0 2012-10-02       25
-```
-
-
-## What is mean total number of steps taken per day?
+## 2. Histogram of the total number of steps taken each day
 
 ```r
-knitr::opts_chunk$set(echo = TRUE)
-gpby_date = aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$date),FUN=mean)
-gpby_date
+temp = bydate %>% summarise(sumsteps=sum(steps))
 ```
 
 ```
-##       Group.1          x
-## 1  2012-10-02  0.4375000
-## 2  2012-10-03 39.4166667
-## 3  2012-10-04 42.0694444
-## 4  2012-10-05 46.1597222
-## 5  2012-10-06 53.5416667
-## 6  2012-10-07 38.2465278
-## 7  2012-10-09 44.4826389
-## 8  2012-10-10 34.3750000
-## 9  2012-10-11 35.7777778
-## 10 2012-10-12 60.3541667
-## 11 2012-10-13 43.1458333
-## 12 2012-10-14 52.4236111
-## 13 2012-10-15 35.2048611
-## 14 2012-10-16 52.3750000
-## 15 2012-10-17 46.7083333
-## 16 2012-10-18 34.9166667
-## 17 2012-10-19 41.0729167
-## 18 2012-10-20 36.0937500
-## 19 2012-10-21 30.6284722
-## 20 2012-10-22 46.7361111
-## 21 2012-10-23 30.9652778
-## 22 2012-10-24 29.0104167
-## 23 2012-10-25  8.6527778
-## 24 2012-10-26 23.5347222
-## 25 2012-10-27 35.1354167
-## 26 2012-10-28 39.7847222
-## 27 2012-10-29 17.4236111
-## 28 2012-10-30 34.0937500
-## 29 2012-10-31 53.5208333
-## 30 2012-11-02 36.8055556
-## 31 2012-11-03 36.7048611
-## 32 2012-11-05 36.2465278
-## 33 2012-11-06 28.9375000
-## 34 2012-11-07 44.7326389
-## 35 2012-11-08 11.1770833
-## 36 2012-11-11 43.7777778
-## 37 2012-11-12 37.3784722
-## 38 2012-11-13 25.4722222
-## 39 2012-11-15  0.1423611
-## 40 2012-11-16 18.8923611
-## 41 2012-11-17 49.7881944
-## 42 2012-11-18 52.4652778
-## 43 2012-11-19 30.6979167
-## 44 2012-11-20 15.5277778
-## 45 2012-11-21 44.3993056
-## 46 2012-11-22 70.9270833
-## 47 2012-11-23 73.5902778
-## 48 2012-11-24 50.2708333
-## 49 2012-11-25 41.0902778
-## 50 2012-11-26 38.7569444
-## 51 2012-11-27 47.3819444
-## 52 2012-11-28 35.3576389
-## 53 2012-11-29 24.4687500
+## `summarise()` ungrouping output (override with `.groups` argument)
 ```
-## What is the average daily activity pattern?
 
 ```r
-gpby_interval =  aggregate(nonnull_activity_df$steps,by=list(nonnull_activity_df$interval),FUN=mean)
-plot(gpby_interval$Group.1,gpby_interval$x,type='l',xlab='interval',ylab='average')
+ggplot(temp,aes(sumsteps))+geom_histogram(bins=20)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
-## Imputing missing values
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+## 3. Mean and median number of steps taken each day
 
 ```r
-imputed_df = replace_na(activity_df,list(steps=0))
+bydate %>% summarise(meansteps = mean(steps),mediansteps = median(steps))
 ```
-## Are there differences in activity patterns between weekdays and weekends?
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+## # A tibble: 53 x 3
+##    date       meansteps mediansteps
+##    <date>         <dbl>       <dbl>
+##  1 2012-10-02     0.438           0
+##  2 2012-10-03    39.4             0
+##  3 2012-10-04    42.1             0
+##  4 2012-10-05    46.2             0
+##  5 2012-10-06    53.5             0
+##  6 2012-10-07    38.2             0
+##  7 2012-10-09    44.5             0
+##  8 2012-10-10    34.4             0
+##  9 2012-10-11    35.8             0
+## 10 2012-10-12    60.4             0
+## # ... with 43 more rows
+```
+## 4. Time series plot of the average number of steps taken
+
+```r
+temp = byinterval %>% summarise(meansteps=mean(steps))
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```r
+ggplot(temp,aes(interval,meansteps))+geom_line()
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+## 5. The 5-minute interval that, on average, contains the maximum number of steps
+
+
+```r
+temp[which.max(temp$meansteps),]
+```
+
+```
+## # A tibble: 1 x 2
+##   interval meansteps
+##      <int>     <dbl>
+## 1      835      206.
+```
+## 6. Code to describe and show a strategy for imputing missing data
+
+**total number of missing values in the dataset**
+
+```r
+apply(activity_df,2,function(x) sum(is.na(x)))
+```
+
+```
+##    steps     date interval 
+##     2304        0        0
+```
+
+**imputed value is calculated by floor of average on each interval.**
+
+```r
+imputed_df = activity_df
+imputed_val = byinterval %>% summarise(meanval = floor(mean(steps)))
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```r
+for (i in 1:dim(activity_df)[[1]]){
+  if(is.na(activity_df[i,'steps'])){
+    imputed_df[i,'steps']=subset(imputed_val,interval==activity_df[i,'interval'])$meanval
+  }
+}
+```
+
+**median and mean of imputed df**
+
+```r
+imputed_df %>% group_by(date) %>%summarise(meansteps = mean(steps)
+                                                     ,mediansteps = median(steps))
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+## # A tibble: 61 x 3
+##    date       meansteps mediansteps
+##    <date>         <dbl>       <dbl>
+##  1 2012-10-01    36.9          33.5
+##  2 2012-10-02     0.438         0  
+##  3 2012-10-03    39.4           0  
+##  4 2012-10-04    42.1           0  
+##  5 2012-10-05    46.2           0  
+##  6 2012-10-06    53.5           0  
+##  7 2012-10-07    38.2           0  
+##  8 2012-10-08    36.9          33.5
+##  9 2012-10-09    44.5           0  
+## 10 2012-10-10    34.4           0  
+## # ... with 51 more rows
+```
+*The mean and median value by date is differ from the original data*
+
+## 7. Histogram of the total number of steps taken each day after missing values are imputed
+
+```r
+imputed_bydate = imputed_df%>% group_by(date)
+temp = imputed_bydate %>% summarise(sumsteps=sum(steps))
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```r
+ggplot(temp,aes(sumsteps))+geom_histogram(bins=20)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+## 8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
 
 ```r
 imputed_df$day = weekdays(imputed_df$date)
 imputed_df$weekend =as.factor(imputed_df$day=='Sunday' | imputed_df$day=='Saturday')
 levels(imputed_df$weekend)<-c('Weekday','Weekend')
-
 gpdata = imputed_df %>%
     group_by(interval,weekend) %>% 
     summarise(steps=mean(steps))
@@ -141,4 +208,7 @@ ggplot <-ggplot(data=gpdata,aes(x = interval,y=steps))
 ggplot+geom_line()+facet_grid(rows =vars(weekend))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+## 9. All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+Here is the markdown file.
